@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Email Spam Classifier</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,100..700;1,100..700&family=Shadows+Into+Light&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: black;
+        }
+        #wrapper {
+            position: absolute;
+            background-color: transparent;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+        #inbox {
+            background: rgba(1,23,5,0.5);
+        }
+        #spambox {
+            background: rgba(23,1,5, 0.5);
+        }
+        .box {
+            max-width: 400px;
+            width: 95%;
+            max-height: 400px;
+            height: 95%;
+            border: 4px double #757474;
+            display: flex;
+            border-radius: 5px;
+            margin: 20px;
+            box-shadow: 20px 25px 30px black;
+            flex-direction: column;
+            justify-content: center;
+            align-items: space-around;
+        }
+        #background {
+            position: fixed;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(black, #2f3d5a);
+            background-position: center;
+            opacity: 0.4;
+            filter: blur(10px);
+            background-repeat: no-repeat;
+            background-size: cover;
+            z-index: -100;
+        }
+        .title {
+            width: 90%;
+            height: 60px;
+            background: rgba(0, 0, 0, 0.7);
+            margin: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-family: "Shadows Into Light", cursive;
+            letter-spacing: 2px;
+            font-size: clamp(16px, 3vw, 22px);
+        }
+        .msgbox {
+            position: relative;
+            width: 90%;
+            height: 300px;
+            margin: 10px;
+            background: rgba(225, 225, 225, 0.1);
+            border-radius: 5px;
+            overflow-y: auto;
+            padding: 10px;
+            color: white;
+            font-family: "Josefin Sans", sans-serif;
+        }
+        .titles {
+            color: white;
+            font-size: 19px;
+            opacity: 1;
+            padding: 15px 20px;
+            border-radius: 5px;
+            text-transform: uppercase;
+            box-shadow: -15px -15px 15px rgba(0,0,0,0.2),
+            15px 15px 15px rgba(0,0,0,0.4),inset -5px -5px 5px rgba(0,0,0,0.1),
+            inset 5px 5px 5px rgba(0,0,0,0.1);
+            text-align: center;
+            font-weight: 300;
+            background: rgba(255,255,255,0.1);
+            font-family: "Josefin Sans", sans-serif;
+        }
+        #maintitle {
+            display: none;
+        }
+        #inputwrapper {
+            position: fixed;
+            display: flex;
+            justify-content: center;
+            align-items: space-between;
+            background: rgba(225,2,5,0.1);
+            border: 2px dashed grey;
+            border-radius: 10px;
+            text-align: center;
+            margin: 12px;
+            right: 0;
+            bottom: 0;
+            box-shadow: 2px 2px 4px black;
+        }
+        #samples {
+            border-right: 2px solid white;
+        }
+        #inputwrapper div {
+            position: relative;
+            padding: 15px;
+            cursor: pointer;
+            transition: 0.2s;
+            border-radius: 20px;
+        }
+        #inputwrapper div:hover {
+            background: linear-gradient(45deg, #757474 0%, #3c3b3f 100%);
+            color: black;
+        }
+        i {
+            color: white;
+            font-size: clamp(14px, 3vw, 20px);
+        }
+        #textfield {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 600px;
+            width: 90%;
+            max-height: 300px;
+            height: 90%;
+            z-index: 100;
+            margin-right: 10px;
+            display: none;
+            flex-direction: column;
+            animation: fadeInInput 450ms ease-out backwards;
+        }
+        #textfield textarea {
+            flex: 1;
+            padding: 20px;
+            outline: none;
+        }
+        #textfieldbtns {
+            display: flex;
+            justify-content: center;
+        }
+        #textfield button, #textfieldbtns span {
+            padding: 10px;
+            width: 80px;
+            cursor: pointer;
+            background: linear-gradient(90deg, #cc2b5e 0%, #753a88 100%);
+            margin: 10px;
+            border: 2px solid white;
+            border-radius: 5px;
+            color: white;
+            transition: width 0.3s ease;
+        }
+        #textfieldbtns span {
+            text-align: center;
+            background: #aa2f3e;
+            border: none;
+            width: 35px;
+            padding: 5px;
+            margin: 15px 5px;
+        }
+        #textfieldbtns span:hover {
+            background: grey;
+        }
+        #textfieldbtns span i {
+            color: white;
+        }
+        #textfield button:hover {
+            color: #89216b;
+            background: white;
+            width: 120px;
+        }
+        @keyframes fadeInInput {
+            from {
+                top: 40%;
+                opacity: 0;
+            }
+            to {
+                top: 50%;
+                opacity: 1;
+            }
+        }
+        @keyframes fadeInBox {
+            from {
+                top: 60%;
+                opacity: 0;
+            }
+            to {
+                top: 50%;
+                opacity: 1;
+            }
+        }
+         @keyframes fadeInalrt {
+            from {
+                top: 0;
+                opacity: 0;
+            }
+            to {
+                top: 5%;
+                opacity: 1;
+            }
+        }
+        #sambox{
+            position: fixed;
+            max-width: 800px;
+            width: 90%;
+            max-height: 450px;
+            height: 90%;
+            background: linear-gradient(45deg,lightcyan,lavenderblush);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+            display: none;
+            border-radius:3px;
+            overflow: auto;
+            animation: fadeInBox 350ms ease-out backwards;
+        }
+        #sambox .boxes{
+            width: 50%;
+            overflow: auto;
+            margin: 10px;
+        }
+        #sambox .boxes:first-child{
+            border-right: 2px dotted darkslategray;
+        }
+        #sambox .boxes .smsgs{
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            font-family : Comic Sans MS;
+            font-size: 14px;
+            background: rgba(1,1,1,0.1);
+            margin: 5px;
+            border-radius: 2px;
+        }
+        #sambox .boxes #title{
+            text-align: center;
+            font-size: 18px;
+            margin: 15px;
+            font-family:Maiandra GD;
+            color: darkslategray;
+        }
+        .cicon{
+            padding: 10px;
+            margin-left: 10px;
+            border: 1px solid grey;
+            border-radius: 3px;
+            cursor: pointer;
+            display: flex;
+            transition: ease 0.2s;
+            align-items: center;
+        }
+        .cicon i{
+            color: grey;
+        }
+        .cicon:hover{
+            background: #3c3b3f;
+            color: white;
+        }
+        #closesambox{
+            width: 30px;
+            height: 30px;
+            background: tomato;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            margin: 5px;
+            transition: ease 0.2s;
+            border-radius: 2px;
+        }
+        #closesambox:hover{
+            background: red;
+        }
+
+        .dialg{
+            position: absolute;
+            color: rgba(255,255,255,0.2);
+            display: block;
+            top: 50%;
+            line-height: 20px;
+            width: 200px;
+            left: 50%;
+            transform: translate(-50%,-50%);
+            font-size: clamp(14px,17px,2vw);
+        }
+        @media only screen and (max-width: 570px) {
+            #wrapper {
+                flex-wrap: wrap;
+            }
+            #maintitle {
+                display: flex;
+                position: relative;
+                margin: 20px;
+                opacity: 1;
+            }
+            #maintitle2 {
+                display: none;
+            }
+        }
+        #alrt{
+            position: absolute;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            background: rgba(15,35,14,0.9);
+            border: 1px solid green;
+            color: white;
+            top: 5%;
+            left: 50%;
+            display: none;
+            transform: translate(-50%,-5%);
+            animation: fadeInalrt 250ms linear forwards;
+        }
+        .classifiedDivmsgs{
+            background : rgba(1,1,1,0.3);
+            margin : 10px;
+            padding : 10px;
+            border-radius : 2px;
+            font-family : 'Josefin Sans', sans-serif;
+            font-weight: 200;
+        }
+    </style>
+</head>
+<body>
+    <div id="background"></div>
+    <div id="textfield">
+        <textarea id="message" placeholder="Enter your Message.."></textarea>
+        <div id="textfieldbtns">
+            <center><button id="classifybtn">Classify</button></center>
+            <span id="closetextfield"><i class="fa-solid fa-xmark"></i></span>
+        </div>
+    </div>
+    <container id="wrapper">
+        <div class="titles" id="maintitle">Email Spam Classifier</div>
+        <section id="inbox" class="box">
+            <div id="inboxtitle" class="title">
+                <span>INBOX</span>
+            </div>
+            <div id="inboxmsg" class="msgbox">
+                <span id="dialog" class="dialg">Your Ham messages will be Outputted Here</span>
+            </div>
+        </section>
+        <div class="titles" id="maintitle2">E<br>m<br>a<br>i<br>l<br><br>S<br>p<br>a<br>m<br><br>C<br>l<br>a<br>s<br>s<br>i<br>f<br>i<br>e<br>r</div>
+        <section id="spambox" class="box">
+            <div id="spamtitle" class="title">
+                <span>SPAM BOX</span>
+            </div>
+            <div id="spammsg" class="msgbox"><span id="dialog2" class="dialg">Your Spam messages will be Outputted Here</span></div>
+        </section>
+    </container>
+    <section id="inputwrapper">
+        <div id="samples" title="Samples">
+            <i class="fa-regular fa-envelope-open"></i>
+        </div>
+        <div id="inputbtn" title="Input Message">
+            <i class="fa-regular fa-keyboard"></i>
+        </div>
+    </section>
+    <section id="sambox">
+        <div id="sbox" class="boxes">
+            <div id="title"><u>Spam Samples,</u></div>
+        </div>
+        <div id="hbox" class="boxes">
+            <div id="title"><u>Ham Samples,</u></div>
+        </div>
+        <div id="closesambox"><i class="fa-solid fa-xmark"></i></div>
+    </section>
+    <div id="alrt">Classified successfully!</div>
+    <script>
+    const wrapper = document.getElementById("wrapper");
+    const textfield = document.getElementById("textfield");
+    const sambox = document.getElementById("sambox");
+    const alertBox = document.getElementById("alrt");
+
+    let currentView = null; // Tracks the currently visible element
+
+    function toggleView(view) {
+        if (currentView === view) {
+            hideCurrentView();
+        } else {
+            showView(view);
+        }
+    }
+
+    function hideCurrentView() {
+        if (currentView === 'input') {
+            wrapper.style.filter = "none";
+            textfield.style.display = "none";
+            document.getElementById('message').value = '';
+        } else if (currentView === 'box') {
+            wrapper.style.filter = "none";
+            sambox.style.display = "none";
+        }
+        currentView = null;
+    }
+
+    function showView(view) {
+        hideCurrentView();
+        if (view === 'input') {
+            textfield.style.display = "flex";
+        } else if (view === 'box') {
+            sambox.style.display = "flex";
+        }
+        wrapper.style.filter = "grayscale(100%) blur(7px)";
+        currentView = view;
+    }
+
+    document.getElementById('inputbtn').addEventListener('click', () => {
+        toggleView('input');
+    });
+
+    document.getElementById('samples').addEventListener('click', () => {
+        toggleView('box');
+    });
+
+    document.getElementById('closesambox').addEventListener('click', () => {
+        hideCurrentView();
+    });
+
+    document.getElementById('closetextfield').addEventListener('click', () => {
+        hideCurrentView();
+    });
+
+    document.getElementById('classifybtn').addEventListener('click', async () => {
+        showalert("Classification Done");
+        const message = document.getElementById('message').value;
+
+        const response = await fetch('http://127.0.0.1:5000/classify', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message }),
+        });
+
+        const result = await response.json();
+        const category = result.category;
+        const probability = result.probability;
+
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add("classifiedDivmsgs");
+        messageDiv.textContent = message;
+
+        const probDiv = document.createElement('div');
+        probDiv.textContent = `Probability of spam: ${probability.spam.toFixed(2)}, ham: ${probability.ham.toFixed(2)}`;
+        probDiv.style.padding = "10px";
+        probDiv.style.color = "orange";
+        probDiv.style.fontWeight = 350;
+        messageDiv.append(probDiv);
+
+        if (category === 'spam') {
+            document.getElementById('spammsg').appendChild(messageDiv);
+            document.getElementById("dialog2").style.display="none";
+        } else {
+            document.getElementById('inboxmsg').appendChild(messageDiv);
+            document.getElementById("dialog").style.display="none";
+        }
+
+        hideCurrentView();
+    });
+
+        const smarray = [
+        "WINNER!! As a valued network customer you have been selected to receivea £900 prize reward! To claim call 09061701461. Claim code KL341. Valid 12 hours only.",
+        "SIX chances to win CASH! From 100 to 20,000 pounds txt> CSH11 and send to 87575. Cost 150p/day, 6days, 16+ TsandCs apply Reply HL 4 info",
+        "URGENT! You have won a 1 week FREE membership in our £100,000 Prize Jackpot! Txt the word: CLAIM to No: 81010 T&C www.dbuk.net LCCLTD POBOX 4403LDNW1A7RW18",
+        "Congrats! 1 year special cinema pass for 2 is yours. call 09061209465 now! C Suprman V, Matrix3, StarWars3, etc all 4 FREE! bx420-ip4-5we. 150pm. Dont miss out!",
+        "Please call our customer service representative on 0800 169 6031 between 10am-9pm as you have WON a guaranteed £1000 cash or £5000 prize!",
+        'Your free ringtone is waiting to be collected. Simply text the password "MIX" to 85069 to verify. Get Usher and Britney. FML, PO Box 5249, MK17 92H. 450Ppw 16',
+        "GENT! We are trying to contact you. Last weekends draw shows that you won a £1000 prize GUARANTEED. Call 09064012160. Claim Code K52. Valid 12hrs only. 150ppm",
+        "You are a winner U have been specially selected 2 receive £1000 or a 4* holiday (flights inc) speak to a live operator 2 claim 0871277810910p/min (18+)",
+        "PRIVATE! Your 2004 Account Statement for 07742676969 shows 786 unredeemed Bonus Points. To claim call 08719180248 Identifier Code: 45239 Expires",
+        "Todays Voda numbers ending 7548 are selected to receive a $350 award. If you have a match please call 08712300220 quoting claim code 4041 standard rates app",
+        "Sunshine Quiz Wkly Q! Win a top Sony DVD player if u know which country the Algarve is in? Txt ansr to 82277. £1.50 SP:Tyrone"
+    ];
+    const hmarray = [
+        "Go until jurong point, crazy.. Available only in bugis n great world la e buffet... Cine there got amore wat...",
+        "Nah I don't think he goes to usf, he lives around here though",
+        "I'm gonna be home soon and i don't want to talk about this stuff anymore tonight, k? I've cried enough today.",
+        "I've been searching for the right words to thank you for this breather. I promise i wont take your help for granted and will fulfil my promise. You have been wonderful and a blessing at all times.",
+        "Aft i finish my lunch then i go str down lor. Ard 3 smth lor. U finish ur lunch already?",
+        "Fffffffff. Alright no way I can meet up with you sooner?",
+        "Just forced myself to eat a slice. I'm really not hungry tho. This sucks. Mark is getting worried. He knows I'm sick when I turn down pizza. Lol",
+        "I'm back & we're packing the car now, I'll let you know if there's room",
+        "Ahhh. Work. I vaguely remember that! What does it feel like? Lol",
+        "Wait that's still not all that clear, were you not sure about me being sarcastic or that that's why x doesn't want to live with us",
+        "Yup... Ok i go home look at the timings then i msg ü again... Xuhui going to learn on 2nd may too but her lesson is at 8am",
+        "Yeah hopefully, if tyler can't do it I could maybe ask around a bit"
+    ];
+
+    function createMessageElement(message) {
+        const messageDiv = document.createElement("div");
+        messageDiv.classList.add("smsgs");
+
+        const messageP = document.createElement("p");
+        messageP.classList.add("smsg");
+        messageP.textContent = message;
+
+        const icon = document.createElement("span");
+        icon.classList.add("cicon");
+        icon.innerHTML = '<i class="fa-solid fa-arrow-up"></i>';
+        icon.addEventListener("click", () => {
+            toggleView('input');
+            document.getElementById("message").value = message;
+            showalert("Inputted Successfully..!");
+        });
+
+        messageDiv.appendChild(messageP);
+        messageDiv.appendChild(icon);
+
+        return messageDiv;
+    }
+
+    function populateMessages(containerId, messages) {
+        const container = document.getElementById(containerId);
+        messages.forEach(message => {
+            const messageElement = createMessageElement(message);
+            container.appendChild(messageElement);
+        });
+    }
+
+    populateMessages('sbox', smarray);
+    populateMessages('hbox', hmarray);
+
+    function showalert(msg) {
+        alertBox.textContent = msg;
+        alertBox.style.display = "flex";
+        setTimeout(() => {
+            alertBox.style.display = "none";
+        }, 1500);
+    }
+</script>
+</body>
+</html>
