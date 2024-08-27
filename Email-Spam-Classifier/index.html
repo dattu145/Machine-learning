@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Email Spam Classifier</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,100..700;1,100..700&family=Shadows+Into+Light&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<style>
+    * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+:root{
+    --h1-font-size: 2rem;
+    --h2-font-size: 1.7rem;
+    --h3-font-size: 1.2rem;
+    --normal-font-size: 1rem;
+    --small-font-size:.9rem;
+    --smaller-font-size: .85rem;
+
+    --skin-color: #727eff;        /* Very Light Gray/Off White */
+    --subtitle-color: lightgrey;    /* Muted Gray */
+    --box-color: #BDC3C7;      /* Soft Gray */
+    --scroll-bar-color: hsl(var(--hue-color),12%, 38%);
+    --scroll-thumb-color: hsl(var(--hue-color),12%, 26%);
+}
+body {
+    background-color: rgba(0,0,0,0.9);
+}
+.info{
+  font-family: "Poppins", sans-serif;
+  margin: 2rem;
+  display: flex;
+  flex-direction: column;
+  row-gap: 2rem;
+}
+.info_div{
+    font-size: var(--h1-font-size);
+    color: var(--skin-color);
+    display: flex;
+    flex-direction: column;
+    row-gap: 2rem;
+}
+.info_div span{
+    color: var(--subtitle-color);
+    font-size: var(--normal-font-size);
+    margin-left: 1rem;
+}
+.info_des{
+    color: var(--box-color);
+    font-size: var(--normal-font-size);
+}
+.info_des span{
+    color: var(--skin-color);
+    margin: auto;
+}
+.info img{
+    width: 30px;
+    height: 30px;
+    margin: 5px 10px;
+}
+.demo{
+    font-size: var(--h2-font-size);
+    color: var(--subtitle-color);
+    display: flex;
+}
+.demo_des{
+    font-size: var(--h3-font-size);
+    color: var(--skin-color);
+}
+.info_title_h2{
+    font-size: var(--h2-font-size);
+    color: var(--skin-color);
+}
+.info_des table,tr,td{
+    border: 1px solid var(--skin-color);
+    border-collapse: collapse;
+    padding: .5rem 1rem;
+    font-size: var(--small-font-size);
+}
+.info_des table{
+    margin: 2rem 0;
+}
+.wrapper {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin: 5rem 0;
+}
+.inbox {
+    background: rgba(1,23,5,0.1);
+}
+.spambox {
+    background: rgba(23,1,5, 0.1);
+}
+.box {
+    max-width: 400px;
+    width: 95%;
+    border: 1px solid var(--skin-color);
+    display: flex;
+    border-radius: 5px;
+    margin: 20px;
+    backdrop-filter: blur(5px);
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+.title {
+    width: 90%;
+    height: 60px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-family: "Shadows Into Light", cursive;
+    letter-spacing: 2px;
+    font-size: clamp(16px, 3vw, 25px);
+}
+.msgbox {
+    position: relative;
+    width: 90%;
+    margin: 10px;
+    background: rgba(225, 225, 225, 0.1);
+    border-radius: 5px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    color: white;
+    font-family: "Josefin Sans", sans-serif;
+}
+.inputwrapper {
+    display: flex;
+    justify-content: center;
+    align-items: space-between;
+    background: rgba(225,255,255,0.05);
+    border-radius: 10px;
+    text-align: center;
+    margin: 15px;
+    backdrop-filter: blur(5px);
+}
+.inputbtn {
+    border: 1px solid grey;
+}
+.inputwrapper div {
+    position: relative;
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: 0.2s;
+    border-radius: 20px;
+}
+.inputwrapper .inputbtn:hover {
+    background: rgba(255,255,255,0.1);
+    color: black;
+}
+i {
+    color: white;
+    font-size: clamp(14px, 3vw, 20px);
+}
+.textfield {
+    position: fixed;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 100;
+    visibility: hidden;
+    opacity: 0;
+    transition: .4s;
+    backdrop-filter: blur(50px);
+    transform: translateY(-40px);
+}
+.textfield_active{
+    visibility: visible;
+    opacity: 1;
+    transform: translateY(0);
+}
+.textfield textarea {
+    flex: 1;
+    padding: 20px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 200px;
+    height: 100%;
+    outline: none;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    border: none;
+    border-radius: 5px;
+}
+.textfieldbtns {
+    display: flex;
+    justify-content: center;
+    transition: .4s;
+}
+.textfield button, .textfieldbtns span {
+    padding: 10px;
+    width: 80px;
+    cursor: pointer;
+    background: var(--skin-color);
+    margin: 10px;
+    border: 2px solid white;
+    border-radius: 5px;
+    color: white;
+    transition: 0.3s ease;
+}
+.textfieldbtns span {
+    text-align: center;
+    background: rgba(0,0,0,0.7);
+    border: none;
+    width: 35px;
+    padding: 5px;
+    margin: 15px 5px;
+    transition: .3s;
+}
+.textfieldbtns span i {
+    color: white;
+}
+.textfield button:hover {
+    color: #89216b;
+    background: white;
+}
+.sambox{
+    position: relative;
+    background: rgba(0,0,0,0.7);
+    border-radius:3px;
+    color: white;
+    display: flex;
+    height: 100vh;
+}
+.sambox_outer{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: .4s ease;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+}
+.sambox_active{
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+.sambox .boxes{
+    width: 50%;
+    overflow: auto;
+    margin: 10px;
+}
+
+.sambox .boxes::-webkit-scrollbar {
+    width: 3px;
+}
+.sambox .boxes::-webkit-scrollbar-track {
+    background: var(--subtitle-color); /* Background of the scrollbar track */
+}
+.sambox .boxes::-webkit-scrollbar-thumb {
+    background-color: var(--skin-color); /* Color of the scrollbar thumb */
+}
+.sambox .boxes::-webkit-scrollbar-thumb:hover {
+    background-color: #555; /* Color of the scrollbar thumb on hover */
+}
+
+body::-webkit-scrollbar {
+    width: 3px;
+}
+body::-webkit-scrollbar-track {
+    background: var(--subtitle-color); /* Background of the scrollbar track */
+}
+body::-webkit-scrollbar-thumb {
+    background-color: var(--skin-color); /* Color of the scrollbar thumb */
+}
+body::-webkit-scrollbar-thumb:hover {
+    background-color: #555; /* Color of the scrollbar thumb on hover */
+}
+
+.sambox .boxes .smsgs{
+    display: flex;
+    justify-content: space-between;
+    padding: 15px;
+    font-family : Comic Sans MS;
+    font-size: 14px;
+    background: rgba(1,1,1,0.1);
+    margin: 5px;
+    border-radius: 2px;
+    overflow: auto;
+}
+.sambox .boxes .title{
+    text-align: center;
+    font-size: var(--h2-font-size);
+    margin: 15px;
+    color: var(--skin-color);
+}
+.cicon{
+    padding: 10px;
+    margin-left: 10px;
+    border: 1px solid grey;
+    border-radius: 3px;
+    cursor: pointer;
+    display: flex;
+    transition: ease 0.2s;
+    align-items: center;
+}
+.cicon i{
+    color: lightgrey;
+}
+.cicon:hover{
+    background:#3c3b3f;
+    color: white;
+}
+.closesambox{
+    position: absolute;
+    right: 2px;
+    width: 25px;
+    height: 25px;
+    background: var(--skin-color);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    margin: 20px;
+    transition: ease 0.2s;
+    border-radius: 2px;
+}
+
+.dialg{
+    color: rgba(255,255,255,0.2);
+    line-height: 25px;
+    font-weight: 300;
+    width: 200px;
+    margin: 1rem;
+}
+@media only screen and (max-width: 750px) {
+    .wrapper {
+        flex-wrap: wrap;
+    }
+    .box{
+        width: 90%;
+    }
+    .sambox{
+        flex-direction: column;
+    }
+    .sambox .boxes{
+        width: 100vw;
+    }
+}
+@media only screen and (max-width: 560px) {
+    :root{
+    --h1-font-size: 1.8rem;
+    --h2-font-size: 1.6rem;
+    --h3-font-size: 1.1rem;
+    --normal-font-size: .9rem;
+    --small-font-size:.8rem;
+    --smaller-font-size: .7rem;
+    }
+}
+@media only screen and (max-width: 380px) {
+    :root{
+    --h1-font-size: 1.6rem;
+    --h2-font-size: 1.5rem;
+    --h3-font-size: 1rem;
+    --normal-font-size: .9rem;
+    --small-font-size: .8rem;
+    --smaller-font-size: .7rem;
+    }
+}
+
+.alrt{
+    position: fixed;
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-family: monospace;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    top: 0%;
+    left: 50%;
+    visibility: hidden;
+    opacity: 0;
+    transform: translate(-50%,-0%);
+    transition: .4s;
+    z-index: 1000;
+}
+.alert_active{
+    opacity: 1;
+    visibility: visible;
+    top: 5%;
+    transform: translate(-50%,-5%);
+}
+.classifiedDivmsgs{
+    background : rgba(1,1,1,0.2);
+    padding : 10px;
+    border-radius : 2px;
+    font-family : 'Josefin Sans', sans-serif;
+    margin: 5px 0;
+    font-weight: 200;
+}
+.demo_des i{
+    margin: .5rem;
+}
+
+.demo_des a{
+    cursor: pointer;
+    color: var(--subtitle-color);
+    font-size: var(--normal-font-size);
+    margin-left: .5rem;
+}
+</style>
+<body>
+    <section class="info">
+        <div class="info_div">
+            <div class="info_title">Email Spam Classifier<br><span> : Keep Your Inbox Clean</span></div>
+            <div class="info_des">Harness the power of AI to keep your inbox free from spam. Our email spam classifier identifies and <span>segregates spam</span> with high accuracy, allowing you to focus on the emails that matter most.</div>
+        </div>
+        <div>
+        <div class="demo">Do I get a Demo? <img src="https://em-content.zobj.net/source/animated-noto-color-emoji/356/thinking-face_1f914.gif"></div>
+        <div class="demo_des">Yes, you do!</div>
+        </div>
+    </section>
+
+    <div class="textfield">
+        <textarea class="message" placeholder="Bake your Message.."></textarea>
+        <div class="textfieldbtns">
+            <button class="classifybtn">Classify</button>
+            <span class="closetextfield"><i class="fa-solid fa-xmark"></i></span>
+        </div>
+    </div>
+
+    <container class="wrapper">
+
+        <section class="inbox box">
+            <div class="inboxtitle title">
+                <span>INBOX</span>
+            </div>
+            <div class="inboxmsg msgbox">
+                <span class="dialog dialg">Your Ham messages will be Outputted Here</span>
+            </div>
+        </section>
+
+        <section class="inputwrapper">
+            <div class="samples" title="Samples">
+                <i class="fa-regular fa-envelope-open"></i>
+            </div>
+            <div class="inputbtn" title="Input Message">
+                <i class="fa-regular fa-keyboard"></i>
+            </div>
+        </section>
+
+        <section class="spambox box">
+            <div class="spamtitle title">
+                <span>SPAM BOX</span>
+            </div>
+            <div class="spammsg msgbox"><span class="dialog2 dialg">Your Spam messages will be Outputted Here</span></div>
+        </section>
+
+    </container>
+
+
+    <div class="sambox_outer">
+        <section class="sambox">
+            <div class="sbox boxes">
+                <div class="title">Spam Samples</div>
+            </div>
+            <div class="hbox boxes">
+                <div class="title">Ham Samples</div>
+            </div>
+            <div class="closesambox"><i class="fa-solid fa-xmark"></i></div>
+        </section>
+    </div>
+
+    <section class="info">
+        <div class="info_div">
+            <div class="info_title_h2">Why Simple?<br></div>
+            <div class="info_des">I chose this simple implementation for the spam filter to ensure it’s easy to understand, use and implement, allowing for quick deployment and reliable email protection without unnecessary complexity.</div>
+        </div>
+        <div>
+        <div class="info_title_h2">Model Tactics,</div>
+        <div class="info_des">
+            <table>
+                <tr>
+                    <td>Dataset</td>
+                    <td>UCI SMS Spam Dataset</td>
+                </tr>
+                <tr>
+                    <td>No.of Records</td>
+                    <td>5160</td>
+                </tr>
+                <tr>
+                    <td>Classifier</td>
+                    <td>MultiNomial Naive Bayes</td>
+                </tr>
+                <tr>
+                    <td>Accuracy</td>
+                    <td>94%</td>
+                </tr>
+                <tr>
+                    <td>Precision</td>
+                    <td>100%</td>
+                </tr>
+            </table>
+        </div>
+        <div class="demo_des"><span>My work is showcased on GitHub <i class="fa-brands fa-github"></i> : </span><a href="https://github.com/dattu145/Machine-learning/tree/main/Email-Spam-Classifier" target="_blank">https://github.com/dattu145/Machine-learning/tree/main/Email-Spam-Classifier</a></div>
+        <div class="demo_des"><span>Visit my Portfolio : <i class="fa-solid fa-user-tie"></i></span><a href="https://dattuportfolio.netlify.app" target="_blank">https://dattuportfolio.com</div>
+    </section>
+
+    <div class="alrt"></div>
+
+<script>
+const textfield = document.querySelector(".textfield");
+const sambox = document.querySelector(".sambox_outer");
+const alertBox = document.querySelector(".alrt");
+
+document.querySelector(".inputbtn").addEventListener('click',toggleInput)
+document.querySelector('.closetextfield').addEventListener('click',()=>{
+    toggleInput();
+    document.querySelector('.message').value = '';
+})
+
+function toggleInput(){
+    textfield.classList.toggle('textfield_active');
+}
+
+document.querySelector('.samples').addEventListener('click',toggleSamples)
+document.querySelector('.closesambox').addEventListener('click',toggleSamples)
+
+function toggleSamples(){
+    sambox.classList.toggle('sambox_active');
+}
+
+    document.querySelector('.classifybtn').addEventListener('click', async () => {
+        showalert("Classification Done");
+        const message = document.querySelector('.message').value;
+        toggleInput();
+
+        const response = await fetch('http://127.0.0.1:5000/classify', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message }),
+        });
+
+        const result = await response.json();
+        const category = result.category;
+        const probability = result.probability;
+
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add("classifiedDivmsgs");
+        messageDiv.textContent = message;
+
+        const probDiv = document.createElement('div');
+        probDiv.textContent = `Probability of spam: ${probability.spam.toFixed(2)}, ham: ${probability.ham.toFixed(2)}`;
+        probDiv.style.padding = "10px";
+        probDiv.style.color = "var(--skin-color)";
+        probDiv.style.fontWeight = 350;
+        messageDiv.append(probDiv);
+
+        if (category === 'spam') {
+            document.querySelector('.spammsg').appendChild(messageDiv);
+            document.querySelector(".dialog2").style.display="none";
+        } else {
+            document.querySelector('.inboxmsg').appendChild(messageDiv);
+            document.querySelector(".dialog").style.display="none";
+        }
+
+        document.querySelector('.message').value = '';
+
+    });
+
+    const smarray = [
+        "WINNER!! As a valued network customer you have been selected to receivea £900 prize reward! To claim call 09061701461. Claim code KL341. Valid 12 hours only.",
+        "SIX chances to win CASH! From 100 to 20,000 pounds txt> CSH11 and send to 87575. Cost 150p/day, 6days, 16+ TsandCs apply Reply HL 4 info",
+        "URGENT! You have won a 1 week FREE membership in our £100,000 Prize Jackpot! Txt the word: CLAIM to No: 81010 T&C www.dbuk.net LCCLTD POBOX 4403LDNW1A7RW18",
+        "Congrats! 1 year special cinema pass for 2 is yours. call 09061209465 now! C Suprman V, Matrix3, StarWars3, etc all 4 FREE! bx420-ip4-5we. 150pm. Dont miss out!",
+        "Please call our customer service representative on 0800 169 6031 between 10am-9pm as you have WON a guaranteed £1000 cash or £5000 prize!",
+        'Your free ringtone is waiting to be collected. Simply text the password "MIX" to 85069 to verify. Get Usher and Britney. FML, PO Box 5249, MK17 92H. 450Ppw 16',
+        "GENT! We are trying to contact you. Last weekends draw shows that you won a £1000 prize GUARANTEED. Call 09064012160. Claim Code K52. Valid 12hrs only. 150ppm",
+        "You are a winner U have been specially selected 2 receive £1000 or a 4* holiday (flights inc) speak to a live operator 2 claim 0871277810910p/min (18+)",
+        "PRIVATE! Your 2004 Account Statement for 07742676969 shows 786 unredeemed Bonus Points. To claim call 08719180248 Identifier Code: 45239 Expires",
+        "Todays Voda numbers ending 7548 are selected to receive a $350 award. If you have a match please call 08712300220 quoting claim code 4041 standard rates app",
+        "Sunshine Quiz Wkly Q! Win a top Sony DVD player if u know which country the Algarve is in? Txt ansr to 82277. £1.50 SP:Tyrone"
+    ];
+    const hmarray = [
+        "Go until jurong point, crazy.. Available only in bugis n great world la e buffet... Cine there got amore wat...",
+        "Nah I don't think he goes to usf, he lives around here though",
+        "I'm gonna be home soon and i don't want to talk about this stuff anymore tonight, k? I've cried enough today.",
+        "I've been searching for the right words to thank you for this breather. I promise i wont take your help for granted and will fulfil my promise. You have been wonderful and a blessing at all times.",
+        "Aft i finish my lunch then i go str down lor. Ard 3 smth lor. U finish ur lunch already?",
+        "Fffffffff. Alright no way I can meet up with you sooner?",
+        "Just forced myself to eat a slice. I'm really not hungry tho. This sucks. Mark is getting worried. He knows I'm sick when I turn down pizza. Lol",
+        "I'm back & we're packing the car now, I'll let you know if there's room",
+        "Ahhh. Work. I vaguely remember that! What does it feel like? Lol",
+        "Wait that's still not all that clear, were you not sure about me being sarcastic or that that's why x doesn't want to live with us",
+        "Yup... Ok i go home look at the timings then i msg ü again... Xuhui going to learn on 2nd may too but her lesson is at 8am",
+        "Yeah hopefully, if tyler can't do it I could maybe ask around a bit"
+    ];
+
+    function createMessageElement(message) {
+        const messageDiv = document.createElement("div");
+        messageDiv.classList.add("smsgs");
+
+        const messageP = document.createElement("p");
+        messageP.classList.add("smsg");
+        messageP.textContent = message;
+
+        const icon = document.createElement("span");
+        icon.classList.add("cicon");
+        icon.innerHTML = '<i class="fa-solid fa-arrow-up"></i>';
+        icon.addEventListener("click", () => {
+            document.querySelector(".message").value = message;
+            showalert("Inputted Successfully..!");
+            toggleSamples();
+            toggleInput();
+        });
+
+        messageDiv.appendChild(messageP);
+        messageDiv.appendChild(icon);
+
+        return messageDiv;
+    }
+
+    function populateMessages(containerId, messages) {
+        const container = document.querySelector(containerId);
+        messages.forEach(message => {
+            const messageElement = createMessageElement(message);
+            container.appendChild(messageElement);
+        });
+    }
+
+    populateMessages('.sbox', smarray);
+    populateMessages('.hbox', hmarray);
+
+    function showalert(msg) {
+        alertBox.classList.add('alert_active')
+        alertBox.textContent = msg;
+        setTimeout(() => {
+            alertBox.classList.remove('alert_active')
+        }, 1500);
+    }
+
+    </script>
+</body>
+</html>
